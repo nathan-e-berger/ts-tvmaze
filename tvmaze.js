@@ -10781,6 +10781,7 @@ var $ = jquery_1.default;
 var $showsList = $("#showsList");
 var $episodesArea = $("#episodesArea");
 var $searchForm = $("#searchForm");
+var BASE_API_URL = "https://api.tvmaze.com";
 /** Given a search term, search for tv shows that match that query.
  *
  *  Returns (promise) array of show objects: [show, show, ...].
@@ -10789,16 +10790,24 @@ var $searchForm = $("#searchForm");
  */
 function searchShowsByTerm(term) {
     return __awaiter(this, void 0, void 0, function () {
+        var params, response, showData;
         return __generator(this, function (_a) {
-            // ADD: Remove placeholder & make request to TVMaze search shows API.
-            return [2 /*return*/, [
-                    {
-                        id: 1767,
-                        name: "The Bletchley Circle",
-                        summary: "<p><b>The Bletchley Circle</b> follows the journey of four ordinary\n           women with extraordinary skills that helped to end World War II.</p>\n         <p>Set in 1952, Susan, Millie, Lucy and Jean have returned to their\n           normal lives, modestly setting aside the part they played in\n           producing crucial intelligence, which helped the Allies to victory\n           and shortened the war. When Susan discovers a hidden code behind an\n           unsolved murder she is met by skepticism from the police. She\n           quickly realises she can only begin to crack the murders and bring\n           the culprit to justice with her former friends.</p>",
-                        image: "http://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
-                    }
-                ]];
+            switch (_a.label) {
+                case 0:
+                    params = new URLSearchParams(term);
+                    return [4 /*yield*/, fetch("".concat(BASE_API_URL, "/search/shows").concat(params))];
+                case 1:
+                    response = _a.sent();
+                    return [4 /*yield*/, response.json()];
+                case 2:
+                    showData = _a.sent();
+                    return [2 /*return*/, showData.map(function (s) { return ({
+                            id: s.show.id,
+                            name: s.show.name,
+                            summary: s.show.summary,
+                            image: s.show.image.medium
+                        }); })];
+            }
         });
     });
 }
