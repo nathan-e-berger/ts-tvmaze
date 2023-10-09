@@ -5,6 +5,7 @@ const $ = jQuery;
 
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
+const $episodesList = $("#episodesList");
 const $searchForm = $("#searchForm");
 
 const BASE_API_URL = "https://api.tvmaze.com";
@@ -12,18 +13,28 @@ const DEFAULT_IMAGE_URL =
  "https://tinyurl.com/tv-missing";
 
 
-interface ShowInterface {
-  id: number;
-  name: string;
-  summary: string;
-  image: string;
-}
 
 interface EpisodeInterface {
   id: number;
   name: string;
   season: string;
   number: string
+}
+
+interface APIShowInterface {
+  show: {
+    id: number;
+    name: string;
+    summary: string;
+    image: ({original: string} | null);
+  }
+}
+
+interface ShowInterface {
+  id: number;
+  name: string;
+  summary: string;
+  image: string
 }
 
 /** Given a search term, search for tv shows that match that query.
@@ -37,13 +48,13 @@ async function searchShowsByTerm(term: string): Promise<ShowInterface[]> {
   const params = new URLSearchParams({q: term});
 
   const response = await fetch(`${BASE_API_URL}/search/shows?${params}`);
-  const showData = await response.json() as any[];
+  const showData = await response.json() as APIShowInterface[];
 
   return showData.map(s => ({
     id: s.show.id,
     name: s.show.name,
     summary: s.show.summary,
-    image: s.show.image.original || DEFAULT_IMAGE_URL
+    image: s.show.image?.original || DEFAULT_IMAGE_URL
   }));
 }
 
@@ -69,6 +80,7 @@ function populateShows(shows: ShowInterface[]):void {
              </button>
            </div>
          </div>
+
        </div>
       `);
 
@@ -100,8 +112,8 @@ $searchForm.on("submit", async function (evt) {
  */
 
 async function getEpisodesOfShow(id:number):Promise<EpisodeInterface[]> {
-  const response = await fetch(`${BASE_API_URL}/shows/${id}}/episodes`);
-  const episodeData = await response.json() as any[];
+  const response = await fetch(`${BASE_API_URL}/shows/${id}/episodes`);
+  const episodeData = await response.json() as EpisodeInterface[];
 
   return episodeData.map(e => ({
     id: e.id,
@@ -111,6 +123,35 @@ async function getEpisodesOfShow(id:number):Promise<EpisodeInterface[]> {
   }))
  }
 
-/** Write a clear docstring for this function... */
+/** Given an array of episodes, display a list of episode information,
+ * revealing the episodes area
+ */
 
-// function populateEpisodes(episodes) { }
+function populateEpisodes(episodes: EpisodeInterface[]) {
+  $episodesList.empty();
+  for (const episode of episodes) {
+    const $episode = $("<li>").text(`${episode.name}` +
+    `(season ${episode.season} number ${episode.number})`);
+
+    $episodesList.append($episode);
+  }
+
+  $episodesArea.show();
+}
+
+/** click handler for episodes button
+ * triggers gathering episodes and populating episodes list
+ * on episodes button click
+ */
+
+async function handleEpisodeClick (evt: JQuery.ClickEvent) {
+  const $target = $(evt.target);
+  const $show = $target.closest(".Show")
+  const showId = $show.data("show-id");
+  console.log("showId:", showId);
+
+  const episodes = await getEpisodesOfShow(showId);
+  populateEpisodes(episodes);
+}
+
+$showsList.on("click", $(".Show-getEpisodes"), handleEpisodeClick);
